@@ -4,7 +4,9 @@ namespace App\Http\Controllers\API;
 
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\API\CategoryResource;
 use App\Http\Requests\API\CategoryRequest;
@@ -90,11 +92,19 @@ class CategoryController extends BaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  Category  $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category)
+    public function destroy($id)
     {
+        $category = Category::find($id);
+        if (is_null($category)) {
+            return $this->sendError('Category not found.');
+        }
+        $category_count = DB::table('category_product')->where('category_id', $id)->count();
+        if($category_count>0){
+            return $this->sendError('Category used other product.');
+        };
         $category->delete();
 
         return $this->sendResponse([],'Category deleted successfully.');
