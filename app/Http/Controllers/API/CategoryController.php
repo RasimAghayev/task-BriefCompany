@@ -19,7 +19,7 @@ class CategoryController extends BaseController
     public function index()
     {
         $categories = Category::all();
-        return $this->sendResponse(CategoryResource::collection($categories), 'Categories retrieved successfully.');
+        return $this->sendResponse(CategoryResource::collection($categories), 'Category retrieved successfully.');
     }
 
     /**
@@ -90,7 +90,7 @@ class CategoryController extends BaseController
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  Category  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy(Category $category)
