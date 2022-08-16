@@ -19,7 +19,7 @@ class ProductController extends BaseController
      */
     public function index()
     {
-        $product=Product::all();
+        $product=Product::withTrashed()->get();
         return $this->sendResponse(ProductResource::collection($product), 'Product retrieved successfully.');
     }
 
