@@ -20,6 +20,7 @@ return new class extends Migration
             $table->float('priceTo');
             $table->enum('published', ['Yes', 'No']);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

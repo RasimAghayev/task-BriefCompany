@@ -20,6 +20,7 @@ class ProductResource extends JsonResource
         $product['id']=$this->id;
         $product['price']=$this->priceFrom.'-'.$this->priceTo;
         $product['published']=$this->published;
+        $product['deleted_at']=$this->deleted_at;
         $product['categories'] = [];
         $categories=$this->categories;
         $categories=$categories->map(
