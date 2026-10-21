@@ -25,16 +25,21 @@ The contract of every endpoint is in [`docs/api.md`](docs/api.md).
 ```shell
 mkdir -p var
 cp .env.example var/.env
-docker compose build
-docker compose up -d
+docker compose --env-file var/.env build
+docker compose --env-file var/.env up -d
 ```
 
 Then:
 
 ```shell
-docker compose exec app php artisan migrate
-docker compose exec app php artisan api:token tester@example.com
+docker compose --env-file var/.env exec app php artisan migrate
+docker compose --env-file var/.env exec app php artisan api:token tester@example.com
 ```
+
+Every command of the stack needs `--env-file var/.env`, because the variables
+of the stack live in that file and not in the root of the project. The
+passwords of the database have no default value: the stack refuses to start
+until they are set.
 
 The command prints a token. Send it in the header
 `Authorization: Bearer <token>`.
@@ -73,9 +78,9 @@ Both gates run inside the project's own Docker images. Nothing has to be
 installed on the machine.
 
 ```shell
-docker compose --profile test run --rm test                                  # phpunit
-docker compose --profile test run --rm --entrypoint ./vendor/bin/pint test --test   # the linter
-docker compose --profile test run --rm --entrypoint composer test audit --no-interaction --abandoned=report
+docker compose --env-file var/.env --profile test run --rm test                                  # phpunit
+docker compose --env-file var/.env --profile test run --rm --entrypoint ./vendor/bin/pint test --test   # the linter
+docker compose --env-file var/.env --profile test run --rm --entrypoint composer test audit --no-interaction --abandoned=report
 ```
 
 The suite runs against an in memory SQLite database, so it needs neither a
