@@ -1,16 +1,18 @@
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/vendor
-.env
-.env.backup
+# The composer lock file and the vendor directory are never part of the
+# repository, but the lock file is: it decides the exact versions the
+# application runs with.
+vendor/
+node_modules/
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
-auth.json
-npm-debug.log
-yarn-error.log
-/.idea
-/.vscode
+.phpunit.cache/
+
+# The state of the stack (R92).
+var/
+
+# Local environment files. `.env.example` is the tracked template.
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store

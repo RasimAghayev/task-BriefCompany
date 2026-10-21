@@ -1,0 +1,85 @@
+name: "task-brief-company"
+
+# Every bind mount of the stack lives under var/ (R92): the local environment
+# file and the database state. The application source is baked into the image,
+# so no versioned directory is mounted into a container. Named volumes are
+# forbidden.
+#
+# Resource limits are required for every service (R60, R64, R102).
+x-resources-default: &resources-default
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 512M
+        pids: 256
+      reservations:
+        cpus: "0.25"
+        memory: 128M
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: build/php/Dockerfile
+      target: runtime
+    container_name: task_brief_company_app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - var/.env
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${DB_DATABASE:-task_brief_company}
+      DB_USERNAME: ${DB_USER:-app}
+      DB_PASSWORD: ${DB_PASSWORD:-app}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    <<: *resources-default
+    networks:
+      - task-brief-company
+
+  test:
+    build:
+      context: .
+      dockerfile: build/php/Dockerfile
+      target: test
+    profiles: ["test"]
+    # The suite runs against an in memory database, so it needs neither a
+    # database nor the network. It reads no environment file, so the values
+    # of the local machine cannot change the result.
+    <<: *resources-default
+    networks:
+      - task-brief-company
+
+  postgres:
+    build:
+      context: .
+      dockerfile: build/postgres/Dockerfile
+    container_name: task_brief_company_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-task_brief_company}
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-app}
+      POSTGRES_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - ./var/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app} -d ${DB_DATABASE:-task_brief_company}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    <<: *resources-default
+    networks:
+      - task-brief-company
+
+networks:
+  task-brief-company:
+    name: task-brief-company
