@@ -1,4 +1,4 @@
-# The API of task-BriefCompany
+# The API of product-catalog-api
 
 Every endpoint, with its request, its response and the rules that hold for
 it. The base path of the API is `/api`.

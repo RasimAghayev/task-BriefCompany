@@ -1,4 +1,4 @@
-# The database image of the compose stack of task-BriefCompany.
+# The database image of the compose stack of product-catalog-api.
 #
 # The service builds from this file instead of pointing at a registry image
 # (R91). The base image is pinned by digest.
