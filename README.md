@@ -1,64 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# task-BriefCompany
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A catalogue API for a company brief: categories with subcategories, and
+products that belong to at least one category and carry a price range.
 
-## About Laravel
+Laravel 12 on PHP 8.4, PostgreSQL 16, and a Docker Compose stack for the
+development, the tests and the production build. The API is a JSON API under
+`/api`, and the only page is the welcome page of the framework.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## What it does
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Categories** form a tree: a category has an optional parent, so a
+  category is either a top level one or a subcategory.
+- **Products** carry a name, a price range (`priceFrom`, `priceTo`), a
+  published flag and a soft delete. A product belongs to between two and ten
+  categories, through the table `category_product`.
+- **The catalogue is read by everyone.** The writes ask for a token of
+  Sanctum, so a product can only be created, changed or deleted by an
+  authenticated caller.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The contract of every endpoint is in [`docs/api.md`](docs/api.md).
 
-## Learning Laravel
+## Running it
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```shell
+mkdir -p var
+cp .env.example var/.env
+docker compose build
+docker compose up -d
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Then:
 
-## Laravel Sponsors
+```shell
+docker compose exec app php artisan migrate
+docker compose exec app php artisan api:token tester@example.com
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+The command prints a token. Send it in the header
+`Authorization: Bearer <token>`.
 
-### Premium Partners
+The application is reachable at `http://localhost:8080`. `APP_PORT` in
+`var/.env` moves it to another host port.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+Every bind mount of the stack lives under `var/`, so the repository holds no
+state of its own: `var/.env` is the local environment file and
+`var/postgres` is the data of the database. Named volumes are not used.
 
-## Contributing
+The key of the application is read from the environment. When the environment
+does not carry one, the container generates a random key for itself and
+writes a note about it into the log.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## The endpoints
 
-## Code of Conduct
+| Method | Path | Auth | What it does |
+|---|---|---|---|
+| GET | `/api/category` | – | The categories, a page at a time. |
+| GET | `/api/category/{id}` | – | One category. |
+| POST | `/api/category` | token | Creates a category. |
+| PUT | `/api/category/{id}` | token | Changes a category. |
+| DELETE | `/api/category/{id}` | token | Deletes a category that no product uses. |
+| GET | `/api/product` | – | The products, a page at a time. |
+| GET | `/api/product/{id}` | – | One product. |
+| POST | `/api/product` | token | Creates a product. |
+| PUT | `/api/product/{id}` | token | Changes a product and its categories. |
+| DELETE | `/api/product/{id}` | token | Deletes a product. The row stays, with a date of the deletion. |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+A listing takes `per_page` (15 by default, 100 at most) and `page`.
 
-## Security Vulnerabilities
+## Tests
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Both gates run inside the project's own Docker images. Nothing has to be
+installed on the machine.
 
-## License
+```shell
+docker compose --profile test run --rm test                                  # phpunit
+docker compose --profile test run --rm --entrypoint ./vendor/bin/pint test --test   # the linter
+docker compose --profile test run --rm --entrypoint composer test audit --no-interaction --abandoned=report
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The suite runs against an in memory SQLite database, so it needs neither a
+database nor a network. It covers the two listings, the two writes, the
+validation of the requests, the authentication and the error answers.
+
+The linter is Laravel Pint. The rules are the ones of Laravel, and the
+directories of the runtime state are excluded in `pint.json`.
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs the same gates on every push and every pull
+request:
+
+| Step | Command | Gate |
+|---|---|---|
+| Validate the compose file | `docker compose config --quiet` | ✅ |
+| Build the test image | `docker compose build test` | ✅ |
+| Test suite | `docker compose --profile test run --rm test` | ✅ |
+| Linter | `pint --test` | ✅ |
+| Dependency audit | `composer audit` | ✅ |
+| Build the application image | `docker compose build app` | ✅ |
+| Build the database image | `docker compose build postgres` | ✅ |
+
+The runner needs a Docker daemon and nothing else — no PHP toolchain is
+installed on it. The workflow reads the repository only, never prints a
+secret and never publishes anything, and `actions/checkout` is pinned to a
+commit hash so the tag cannot move under the pipeline.
+
+Two permanent branches exist: `master` (the released state) and `test` (the
+integration state). A change is delivered as a pull request from a
+`feature/*` branch into `test`, and from `test` into `master`.
+
+## The stack
+
+| Part | Choice |
+|---|---|
+| Language | PHP 8.2 or newer, the image runs 8.4 |
+| Framework | Laravel 12 |
+| Database | PostgreSQL 16, SQLite for the tests |
+| Authentication | Sanctum, a token per caller |
+| Web server | Apache with the rewrite module, the process runs as `www-data` on port 8080 |
+| Tests | PHPUnit 11, Laravel Pint as the linter |
+| Dependency audit | `composer audit` |
+
+The base images are pinned by digest, so a rebuild of the project uses the
+same runtime as the last one.
+
+## Known limitations
+
+- **The catalogue has no search.** The listings return the rows in the order
+  of their id, and the only parameter is the size of the page.
+- **A product is not versioned.** A change of a product overwrites the old
+  values, and the date of the change is kept.
+- **A category cannot be a child of itself.** The rule is not checked by the
+  validation, so a cycle of two categories is possible in the data.
+- **The tokens do not expire.** A token is valid until it is removed.
+- **No license file.**
