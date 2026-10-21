@@ -16,8 +16,17 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
-            $table->unsignedInteger('parent_id')->nullable();
+            // The parent points at the same table, so the column has to be
+            // of the same type as the key it points at. Before, the column
+            // was an integer and the key a big integer, which no database
+            // accepts for a foreign key.
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->timestamps();
+
+            $table->foreign('parent_id')
+                ->references('id')
+                ->on('categories')
+                ->nullOnDelete();
         });
     }
 

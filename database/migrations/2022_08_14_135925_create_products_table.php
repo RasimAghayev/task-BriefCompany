@@ -16,11 +16,15 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->float('priceFrom');
-            $table->float('priceTo');
+            // The prices are money, so they are kept with four decimals and
+            // not as a float, which cannot hold a price exactly.
+            $table->decimal('priceFrom', 13, 4);
+            $table->decimal('priceTo', 13, 4);
             $table->enum('published', ['Yes', 'No']);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('published');
         });
     }
 
