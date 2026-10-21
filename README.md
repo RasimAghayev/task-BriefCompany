@@ -1,4 +1,4 @@
-# task-BriefCompany
+# product-catalog-api
 
 A catalogue API for a company brief: categories with subcategories, and
 products that belong to at least one category and carry a price range.
