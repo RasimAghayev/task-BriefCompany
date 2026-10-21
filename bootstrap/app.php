@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // The api group carries the rate limiter of the framework, the same
         // way the group of Laravel 9 carried it.
         $middleware->api(prepend: [
+            ForceJsonResponse::class,
             HandleCors::class,
         ]);
 
