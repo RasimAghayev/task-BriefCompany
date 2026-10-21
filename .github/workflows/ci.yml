@@ -32,22 +32,22 @@ jobs:
           cp .env.example var/.env
 
       - name: Validate the compose file
-        run: docker compose config --quiet
+        run: docker compose --env-file var/.env config --quiet
 
       - name: Build the test image
-        run: docker compose build test
+        run: docker compose --env-file var/.env build test
 
       - name: Run the test suite
-        run: docker compose --profile test run --rm test
+        run: docker compose --env-file var/.env --profile test run --rm test
 
       - name: Run the linter
-        run: docker compose --profile test run --rm --entrypoint ./vendor/bin/pint test --test
+        run: docker compose --env-file var/.env --profile test run --rm --entrypoint ./vendor/bin/pint test --test
 
       - name: Audit the dependencies
-        run: docker compose --profile test run --rm --entrypoint composer test audit --no-interaction --abandoned=report
+        run: docker compose --env-file var/.env --profile test run --rm --entrypoint composer test audit --no-interaction --abandoned=report
 
       - name: Build the application image
-        run: docker compose build app
+        run: docker compose --env-file var/.env build app
 
       - name: Build the database image
-        run: docker compose build postgres
+        run: docker compose --env-file var/.env build postgres
